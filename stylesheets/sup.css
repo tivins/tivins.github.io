@@ -1,0 +1,8 @@
+.badge{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:rgb(230,230,230);}
+.badge.gold{background:rgb(241, 182, 0);}
+.badge.silver{background:rgb(154, 156, 159);}
+.badge.bronze{background:rgb(171, 130, 95);}
+.qitem{padding-left:1rem;border-left:1px solid #ccc}
+.qitem .title{font-weight:bold;font-size:120%}
+.accepted{background:#696;color:#fff;border-radius:3px;padding:1px .5rem;}
+.fw-bold{font-weight:bold;}
