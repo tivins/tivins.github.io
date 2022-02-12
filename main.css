@@ -1,4 +1,4 @@
-
+*{box-sizing: border-box}
 body{font-family: sans-serif;color:#666;}
 a{color:#06f}
 .block,.qa{border:1px solid #ddd;margin:1rem;display:flex;border-radius: 3px;}
@@ -12,3 +12,5 @@ footer,.info{font-size:80%;color:#999}
 .d-flex{display:flex;}
 .flex-grow{flex-grow:1}
 .flex-wrap{flex-wrap: wrap}
+table{width: 100%;border-collapse: collapse}
+table td{border:1px solid #ddd;padding:.5rem;}
