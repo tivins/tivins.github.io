@@ -25,3 +25,15 @@ footer,.info{font-size:80%;color:#999}
 table{width: 100%;border-collapse: collapse}
 table td{border-top:1px solid #ddd;padding:.5rem;}
 table.condensed td{padding:.25rem .5rem}
+
+
+.column { width:100% }
+@media (min-width: 1024px) {
+    .column { width:50.0% }
+}
+@media (min-width: 1200px) {
+    .column { width:33.3333% }
+}
+@media (min-width: 1600px) {
+    .column { width:25.0% }
+}
