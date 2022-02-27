@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SOView</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+      *{box-sizing: border-box}
+      body {
+          font-family: Ubuntu;
+          margin:2rem
+      }
+    #mainblock {
+        width:640px;
+        max-width: 100%;
+        text-align: center;
+        border:1px solid #d6d6d6;
+        margin:4rem auto;
+        padding: 2rem;
+        border-radius: 3px;
+        box-shadow: 0 0 5px #ddd;
+        background: #fff;
+    }
+    #progVal {
+        font-size: 200%;
+        font-weight: 300;
+    }
+    #nextURL {
+        margin-bottom: 1rem;
+        color: #999;
+    }
+    #progStartedSince {
+        margin-top: 1rem;
+        color: #999;
+        font-size: 90%;
+    }
+    #prog {
+        appearance: none;
+        height: 8px;
+        border-radius: 3px;
+        border: 1px solid #08c;
+        background: #f0f0f0;
+        width: 100%;
+        margin: 1rem 0
+    }
+      progress::-moz-progress-bar { background: #08c; }
+      button{padding: .5rem 2rem}
+  </style>
+</head>
+<body>
+  <div style="text-align: center">
+    <select id="intervalSec">
+      <!--
+      <option value="2">2 minutes</option>
+      <option value="5">5 minutes</option>
+      <option value="10" selected>10 minutes</option>
+      <option value="15">15 minutes</option>
+      <option value="20">20 minutes</option>
+      <option value="25">25 minutes</option>
+      -->
+      <option value="30" selected>30 minutes</option>
+      <option value="45" selected>45 minutes</option>
+      <option value="60" selected>1 hour</option>
+    </select>
+      <button id="goBtn">START</button>
+  </div>
+<div id="mainblock">
+  <div id="nextURL">-</div>
+  <div id="progDt"></div>
+  <div id="progVal">0%</div>
+  <progress id="prog" value="0" max="100"></progress>
+  <div id="progStartedSince">00:00 / 00:00</div>
+</div>
+<pre id="logs"></pre>
+<script>/*<![CDATA[*/
+
+const logs = document.querySelector("#logs");
+const goBtn = document.querySelector("#goBtn");
+const prog = document.querySelector("#prog");
+const progVal = document.querySelector("#progVal");
+const progDt = document.querySelector("#progDt");
+const nextURL = document.querySelector("#nextURL");
+const progStartedSince = document.querySelector("#progStartedSince");
+const intervalSec = document.querySelector("#intervalSec");
+// const minutes  = 10;
+// const duration = 1000*60*minutes;
+let lastTick = 0;
+let interval = null;
+
+let qIndex = 0;
+const qIDs = [48169841,48450739,70512323];
+
+function getDuration() {
+  return 1000*60*intervalSec.value/qIDs.length;
+}
+
+goBtn.addEventListener("click", (event) => {
+    addLog("Start");
+    addLog(`Question count: ${qIDs.length}`);
+    lastTick = new Date();
+    if (interval) {
+        addLog("Clear existing interval");
+        window.clearInterval(interval);
+    }
+    nextURL.textContent = getURL(qIDs[qIndex]);
+    interval = window.setInterval(() => {
+        const diff = (new Date()).getTime() - lastTick.getTime();
+        progStartedSince.textContent = tsToStr(diff/1000) + " / " + tsToStr(getDuration()/1000);
+        progVal.textContent = Math.floor(diff/getDuration() *100) + "%";
+        prog.value = Math.round(diff/getDuration() *100);
+        if (diff > getDuration() ) {
+            lastTick = new Date();
+            openURL(qIDs[qIndex]);
+            qIndex++;
+            if (qIndex >= qIDs.length) {
+                qIndex = 0;
+            }
+            nextURL.textContent = getURL(qIDs[qIndex]);
+        }
+    }, 500);
+}, false);
+
+function getURL(qID) {
+    return "https://stackoverflow.com/q/" + qID;
+}
+function openURL(qID)
+{
+    addLog("Open " + qID);
+    window.open(getURL(qID), "SOWiewWindowName");
+}
+
+function addLog(str) {
+    logs.textContent = (new Date()) + ": " + str + "\n" + logs.textContent;
+}
+
+function tsToStr(v) {
+    let m = Math.floor(v/60);
+    v -= m*60;
+    v = Math.round(v);
+    if (m < 10) m = "0"+m;
+    if (v < 10) v = "0"+v;
+    return `${m}:${v}`;
+}
+
+/*]]>*/</script>
+</body>
+</html>
