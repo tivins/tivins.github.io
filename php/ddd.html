@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain-Driven Design en PHP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           CSS RESET & VARIABLES
+           ============================================ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #06060c;
+            --bg-secondary: #0d0d16;
+            --bg-card: #111119;
+            --bg-code: #14141e;
+            --text-primary: #e6e6f0;
+            --text-secondary: #8e8ea8;
+            --text-muted: #54546a;
+            --border: #222236;
+            --border-hover: #3a3a52;
+
+            /* DDD concept colors */
+            --entity-color: #f59e0b;
+            --entity-glow: #f59e0b35;
+            --vo-color: #10b981;
+            --vo-glow: #10b98135;
+            --agg-color: #a78bfa;
+            --agg-glow: #a78bfa35;
+            --repo-color: #3b82f6;
+            --repo-glow: #3b82f635;
+            --event-color: #f43f5e;
+            --event-glow: #f43f5e35;
+            --bc-color: #06b6d4;
+            --bc-glow: #06b6d435;
+
+            --accent: #a78bfa;
+            --accent-glow: #a78bfa30;
+
+            --radius: 16px;
+            --radius-sm: 8px;
+            --font-sans: 'Inter', 'Space Grotesk', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-display: 'Space Grotesk', var(--font-sans);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ============================================
+           ANIMATED BACKGROUND
+           ============================================ */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.4;
+            background:
+                radial-gradient(ellipse 600px 300px at 20% 10%, var(--agg-glow), transparent),
+                radial-gradient(ellipse 500px 400px at 80% 80%, var(--entity-glow), transparent),
+                radial-gradient(ellipse 400px 350px at 50% 50%, var(--bc-glow), transparent);
+            animation: meshDrift 30s ease-in-out infinite alternate;
+        }
+
+        @keyframes meshDrift {
+            0%   { background-position: 0% 0%, 100% 100%, 50% 50%; }
+            100% { background-position: 10% 5%, 90% 90%, 55% 45%; }
+        }
+
+        .bg-hex {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(30deg, rgba(255,255,255,.015) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,.015) 87.5%),
+                linear-gradient(150deg, rgba(255,255,255,.015) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,.015) 87.5%),
+                linear-gradient(30deg, rgba(255,255,255,.015) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,.015) 87.5%),
+                linear-gradient(150deg, rgba(255,255,255,.015) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,.015) 87.5%),
+                linear-gradient(60deg, rgba(255,255,255,.008) 25%, transparent 25.5%, transparent 75%, rgba(255,255,255,.008) 75%),
+                linear-gradient(60deg, rgba(255,255,255,.008) 25%, transparent 25.5%, transparent 75%, rgba(255,255,255,.008) 75%);
+            background-size: 80px 140px;
+            background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 20%, black 30%, transparent 100%);
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ============================================
+           HERO SECTION
+           ============================================ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 0;
+            position: relative;
+        }
+
+        .hero-content {
+            animation: heroIn 1s ease-out;
+        }
+
+        @keyframes heroIn {
+            from { opacity: 0; transform: translateY(50px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 22px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 36px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-badge .hex {
+            width: 10px; height: 10px;
+            background: var(--accent);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            animation: hexPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes hexPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.75); }
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--agg-color) 0%, var(--entity-color) 50%, var(--event-color) 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 60px var(--accent-glow));
+        }
+
+        .hero-tagline {
+            font-family: var(--font-display);
+            font-size: clamp(0.95rem, 2vw, 1.2rem);
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2.2vw, 1.25rem);
+            color: var(--text-secondary);
+            font-weight: 300;
+            margin-bottom: 52px;
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.8;
+        }
+
+        .hero-subtitle strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ============================================
+           CONCEPT NAV (Hexagonal Grid)
+           ============================================ */
+        .concept-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .concept-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 22px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .concept-nav a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(0,0,0,.4);
+        }
+
+        .concept-nav a .nav-icon {
+            width: 30px; height: 30px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .cnav-entity .nav-icon { background: var(--entity-glow); color: var(--entity-color); }
+        .cnav-vo .nav-icon     { background: var(--vo-glow); color: var(--vo-color); }
+        .cnav-agg .nav-icon    { background: var(--agg-glow); color: var(--agg-color); }
+        .cnav-repo .nav-icon   { background: var(--repo-glow); color: var(--repo-color); }
+        .cnav-event .nav-icon  { background: var(--event-glow); color: var(--event-color); }
+        .cnav-bc .nav-icon     { background: var(--bc-glow); color: var(--bc-color); }
+
+        .cnav-entity:hover { border-color: var(--entity-color) !important; box-shadow: 0 8px 32px var(--entity-glow) !important; }
+        .cnav-vo:hover     { border-color: var(--vo-color) !important; box-shadow: 0 8px 32px var(--vo-glow) !important; }
+        .cnav-agg:hover    { border-color: var(--agg-color) !important; box-shadow: 0 8px 32px var(--agg-glow) !important; }
+        .cnav-repo:hover   { border-color: var(--repo-color) !important; box-shadow: 0 8px 32px var(--repo-glow) !important; }
+        .cnav-event:hover  { border-color: var(--event-color) !important; box-shadow: 0 8px 32px var(--event-glow) !important; }
+        .cnav-bc:hover     { border-color: var(--bc-color) !important; box-shadow: 0 8px 32px var(--bc-glow) !important; }
+
+        /* ============================================
+           SCROLL INDICATOR
+           ============================================ */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            animation: heroIn 1s ease-out 0.6s both;
+        }
+
+        .scroll-indicator .line {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--text-muted), transparent);
+            animation: lineScroll 2s ease-in-out infinite;
+        }
+
+        @keyframes lineScroll {
+            0%, 100% { opacity: 1; transform: scaleY(1); }
+            50% { opacity: 0.3; transform: scaleY(0.5); transform-origin: top; }
+        }
+
+        /* ============================================
+           INTRO LAYER DIAGRAM
+           ============================================ */
+        .layers-section {
+            padding: 80px 0 40px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .layers-section.visible { opacity: 1; transform: translateY(0); }
+
+        .layers-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .layers-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+
+        .layers-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .layer-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+
+        .layer-row:hover {
+            border-color: var(--border-hover);
+            transform: translateX(4px);
+        }
+
+        .layer-num {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.5rem;
+            width: 40px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .layer-info h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .layer-info p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .layer-domain .layer-num { color: var(--agg-color); }
+        .layer-domain { border-color: var(--agg-glow); }
+        .layer-app .layer-num { color: var(--entity-color); }
+        .layer-infra .layer-num { color: var(--repo-color); }
+        .layer-ui .layer-num { color: var(--vo-color); }
+
+        .ubiquitous-box {
+            padding: 20px 28px;
+            border-radius: var(--radius);
+            border: 1px dashed var(--border-hover);
+            background: var(--bg-secondary);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ubiquitous-box h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .ubiquitous-box p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .ubiquitous-box p strong {
+            color: var(--text-primary);
+        }
+
+        /* ============================================
+           CONCEPT SECTION
+           ============================================ */
+        .concept {
+            padding: 90px 0 50px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .concept.visible { opacity: 1; transform: translateY(0); }
+
+        .concept-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .concept-icon {
+            width: 68px; height: 68px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .concept-icon::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0.4;
+            filter: blur(14px);
+        }
+
+        .concept-title-group h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }
+
+        .concept-title-group .concept-subtitle {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .concept-desc {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            margin-bottom: 32px;
+            line-height: 1.8;
+        }
+
+        .concept-desc strong { color: var(--text-primary); font-weight: 600; }
+
+        /* Entity */
+        #entities .concept-icon { background: var(--entity-glow); color: var(--entity-color); }
+        #entities .concept-icon::after { background: var(--entity-color); }
+        #entities h2 { color: var(--entity-color); }
+
+        /* Value Object */
+        #value-objects .concept-icon { background: var(--vo-glow); color: var(--vo-color); }
+        #value-objects .concept-icon::after { background: var(--vo-color); }
+        #value-objects h2 { color: var(--vo-color); }
+
+        /* Aggregate */
+        #aggregates .concept-icon { background: var(--agg-glow); color: var(--agg-color); }
+        #aggregates .concept-icon::after { background: var(--agg-color); }
+        #aggregates h2 { color: var(--agg-color); }
+
+        /* Repository */
+        #repositories .concept-icon { background: var(--repo-glow); color: var(--repo-color); }
+        #repositories .concept-icon::after { background: var(--repo-color); }
+        #repositories h2 { color: var(--repo-color); }
+
+        /* Domain Event */
+        #domain-events .concept-icon { background: var(--event-glow); color: var(--event-color); }
+        #domain-events .concept-icon::after { background: var(--event-color); }
+        #domain-events h2 { color: var(--event-color); }
+
+        /* Bounded Context */
+        #bounded-contexts .concept-icon { background: var(--bc-glow); color: var(--bc-color); }
+        #bounded-contexts .concept-icon::after { background: var(--bc-color); }
+        #bounded-contexts h2 { color: var(--bc-color); }
+
+        /* ============================================
+           CODE BLOCKS
+           ============================================ */
+        .code-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .code-single {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .code-grid { grid-template-columns: 1fr; }
+        }
+
+        .code-block {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-code);
+            overflow: hidden;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .code-block:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 8px 40px rgba(0,0,0,.35);
+        }
+
+        .code-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,.015);
+        }
+
+        .code-block-header .filename {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-block-header .filename .folder {
+            color: var(--text-muted);
+        }
+
+        .code-block-header .tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .tag-bad { background: #ef444425; color: #f87171; }
+        .tag-good { background: #22c55e25; color: #4ade80; }
+        .tag-domain { background: var(--agg-glow); color: var(--agg-color); }
+        .tag-infra { background: var(--repo-glow); color: var(--repo-color); }
+
+        .code-block pre {
+            padding: 20px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .code-block pre code { font-family: inherit; }
+
+        /* Syntax highlighting */
+        .kw { color: #c792ea; }
+        .fn { color: #82aaff; }
+        .cl { color: #ffcb6b; }
+        .st { color: #c3e88d; }
+        .cm { color: #546e7a; font-style: italic; }
+        .vr { color: #f78c6c; }
+        .ty { color: #89ddff; }
+        .op { color: #89ddff; }
+        .nb { color: #f07178; }
+        .at { color: #c792ea; } /* attributes/annotations */
+
+        /* ============================================
+           INSIGHT BOX
+           ============================================ */
+        .insight-box {
+            display: flex;
+            gap: 16px;
+            padding: 20px 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+
+        .insight-box .icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            line-height: 1.5;
+        }
+
+        .insight-box p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .insight-box p strong { color: var(--text-primary); }
+
+        .insight-box code {
+            color: var(--accent);
+            background: var(--bg-code);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+        }
+
+        /* ============================================
+           DIVIDER
+           ============================================ */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 16px 0;
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        footer {
+            text-align: center;
+            padding: 70px 24px 40px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        footer .ddd-logo {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 0.08em;
+            background: linear-gradient(135deg, var(--agg-color), var(--entity-color));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover { text-decoration: underline; }
+
+        /* ============================================
+           BACK TO TOP
+           ============================================ */
+        .back-to-top {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 100;
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(16px);
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .back-to-top.show { opacity: 1; transform: translateY(0); }
+
+        .back-to-top:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px rgba(0,0,0,.4);
+        }
+
+        /* ============================================
+           SCROLLBAR
+           ============================================ */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .code-block pre::-webkit-scrollbar { height: 6px; }
+        .code-block pre::-webkit-scrollbar-track { background: transparent; }
+        .code-block pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .concept.visible .code-grid > :first-child,
+        .concept.visible .code-single > :first-child {
+            animation: slideInLeft 0.6s ease-out 0.2s both;
+        }
+
+        .concept.visible .code-grid > :last-child {
+            animation: slideInRight 0.6s ease-out 0.3s both;
+        }
+
+        .concept.visible .insight-box {
+            animation: fadeUp 0.6s ease-out 0.4s both;
+        }
+
+        .layers-section.visible .layer-row {
+            animation: slideInLeft 0.5s ease-out both;
+        }
+        .layers-section.visible .layer-row:nth-child(1) { animation-delay: 0.1s; }
+        .layers-section.visible .layer-row:nth-child(2) { animation-delay: 0.2s; }
+        .layers-section.visible .layer-row:nth-child(3) { animation-delay: 0.3s; }
+        .layers-section.visible .layer-row:nth-child(4) { animation-delay: 0.4s; }
+
+        .layers-section.visible .ubiquitous-box {
+            animation: fadeUp 0.6s ease-out 0.5s both;
+        }
+
+        /* ============================================
+           LINK BACK TO SOLID
+           ============================================ */
+        .sibling-link {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sibling-link:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,.3);
+        }
+
+        .sibling-link .arrow { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="bg-hex"></div>
+<div class="bg-mesh"></div>
+
+<!-- Navigation -->
+<a href="index.html" class="sibling-link"><span class="arrow">&larr;</span> Principes SOLID</a>
+<a href="#top" class="back-to-top" id="backToTop" title="Retour en haut">&uarr;</a>
+
+<!-- ============================
+     HERO
+     ============================ -->
+<section class="hero" id="top">
+    <div class="hero-content">
+        <div class="hero-badge"><span class="hex"></span> Architecture Logicielle &middot; PHP</div>
+        <h1>DDD</h1>
+        <p class="hero-tagline">Domain-Driven Design</p>
+        <p class="hero-subtitle">
+            Concevez votre logiciel autour du <strong>m&eacute;tier</strong>, pas de la technologie.
+            Le DDD place le <strong>domaine</strong> au c&oelig;ur de l'architecture pour cr&eacute;er
+            des applications PHP <strong>expressives et maintenables</strong>.
+        </p>
+        <nav class="concept-nav">
+            <a href="#entities" class="cnav-entity"><span class="nav-icon">&#9670;</span> Entities</a>
+            <a href="#value-objects" class="cnav-vo"><span class="nav-icon">&#9679;</span> Value Objects</a>
+            <a href="#aggregates" class="cnav-agg"><span class="nav-icon">&#11042;</span> Aggregates</a>
+            <a href="#repositories" class="cnav-repo"><span class="nav-icon">&#9881;</span> Repositories</a>
+            <a href="#domain-events" class="cnav-event"><span class="nav-icon">&#9889;</span> Domain Events</a>
+            <a href="#bounded-contexts" class="cnav-bc"><span class="nav-icon">&#11200;</span> Bounded Contexts</a>
+        </nav>
+    </div>
+    <div class="scroll-indicator">
+        <div class="line"></div>
+        explorer
+    </div>
+</section>
+
+<main class="container">
+
+    <!-- ============================
+         ARCHITECTURE OVERVIEW
+         ============================ -->
+    <section class="layers-section" id="layers">
+        <h2 class="layers-title">Architecture en couches</h2>
+        <p class="layers-subtitle">Le DDD s'organise en couches, du plus abstrait au plus concret.</p>
+
+        <div class="layers-diagram">
+            <div class="layer-row layer-domain">
+                <span class="layer-num">01</span>
+                <div class="layer-info">
+                    <h3>Domain</h3>
+                    <p>Le c&oelig;ur m&eacute;tier : Entities, Value Objects, Aggregates, Domain Events, Interfaces de Repositories.</p>
+                </div>
+            </div>
+            <div class="layer-row layer-app">
+                <span class="layer-num">02</span>
+                <div class="layer-info">
+                    <h3>Application</h3>
+                    <p>Orchestration : Use Cases, Command/Query Handlers, DTOs. Aucune logique m&eacute;tier ici.</p>
+                </div>
+            </div>
+            <div class="layer-row layer-infra">
+                <span class="layer-num">03</span>
+                <div class="layer-info">
+                    <h3>Infrastructure</h3>
+                    <p>Impl&eacute;mentations techniques : Doctrine, API externes, syst&egrave;me de fichiers, mail.</p>
+                </div>
+            </div>
+            <div class="layer-row layer-ui">
+                <span class="layer-num">04</span>
+                <div class="layer-info">
+                    <h3>Interface (UI / API)</h3>
+                    <p>Contr&ocirc;leurs, CLI, serialization. Point d'entr&eacute;e vers l'application.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="ubiquitous-box">
+            <h3>&#128172; Ubiquitous Language</h3>
+            <p>
+                Tout le code doit utiliser le <strong>m&ecirc;me vocabulaire que les experts m&eacute;tier</strong>.
+                Pas de traduction entre le code et le business &mdash; <code>Order</code>, <code>Invoice</code>,
+                <code>Shipment</code> dans le code comme dans les r&eacute;unions.
+            </p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         ENTITIES
+         ============================ -->
+    <section class="concept" id="entities">
+        <div class="concept-header">
+            <div class="concept-icon">&#9670;</div>
+            <div class="concept-title-group">
+                <h2>Entities</h2>
+                <div class="concept-subtitle">Objets d&eacute;finis par leur identit&eacute; unique</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Une Entity poss&egrave;de une <strong>identit&eacute; unique</strong> qui persiste dans le temps.
+            Deux entit&eacute;s avec les m&ecirc;mes attributs mais des IDs diff&eacute;rents sont <strong>deux objets distincts</strong>.
+            L'entit&eacute; encapsule sa logique m&eacute;tier et prot&egrave;ge ses invariants.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/</span>User.php</span>
+                    <span class="tag tag-bad">An&eacute;mique</span>
+                </div>
+                <pre><code><span class="cm">// &ldquo;Mod&egrave;le an&eacute;mique&rdquo; : un simple sac de donn&eacute;es</span>
+<span class="cm">// Aucune logique, aucun invariant</span>
+
+<span class="kw">class</span> <span class="cl">User</span>
+{
+    <span class="kw">public</span> <span class="ty">int</span> <span class="vr">$id</span>;
+    <span class="kw">public</span> <span class="ty">string</span> <span class="vr">$email</span>;
+    <span class="kw">public</span> <span class="ty">string</span> <span class="vr">$status</span>;
+    <span class="kw">public</span> <span class="ty">string</span> <span class="vr">$name</span>;
+}
+
+<span class="cm">// La logique est dispers&eacute;e dans des services...</span>
+<span class="vr">$user</span>-><span class="vr">status</span> = <span class="st">'banned'</span>; <span class="cm">// Aucune v&eacute;rification!</span>
+<span class="vr">$user</span>-><span class="vr">email</span>  = <span class="st">'nope'</span>;   <span class="cm">// Email invalide? OK...</span></code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/</span>User.php</span>
+                    <span class="tag tag-good">Entity riche</span>
+                </div>
+                <pre><code><span class="kw">final class</span> <span class="cl">User</span>
+{
+    <span class="kw">private function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="cl">UserId</span> <span class="vr">$id</span>,
+        <span class="kw">private</span> <span class="cl">Email</span> <span class="vr">$email</span>,
+        <span class="kw">private</span> <span class="cl">UserName</span> <span class="vr">$name</span>,
+        <span class="kw">private</span> <span class="cl">UserStatus</span> <span class="vr">$status</span>,
+    ) {}
+
+    <span class="kw">public static function</span> <span class="fn">register</span>(
+        <span class="cl">Email</span> <span class="vr">$email</span>, <span class="cl">UserName</span> <span class="vr">$name</span>
+    ): <span class="ty">self</span> {
+        <span class="kw">return new</span> <span class="ty">self</span>(
+            <span class="cl">UserId</span>::<span class="fn">generate</span>(),
+            <span class="vr">$email</span>, <span class="vr">$name</span>,
+            <span class="cl">UserStatus</span>::<span class="vr">Active</span>,
+        );
+    }
+
+    <span class="kw">public function</span> <span class="fn">ban</span>(): <span class="ty">void</span>
+    {
+        <span class="kw">if</span> (<span class="vr">$this</span>-><span class="vr">status</span> === <span class="cl">UserStatus</span>::<span class="vr">Banned</span>) {
+            <span class="kw">throw new</span> <span class="cl">AlreadyBanned</span>(<span class="vr">$this</span>-><span class="vr">id</span>);
+        }
+        <span class="vr">$this</span>-><span class="vr">status</span> = <span class="cl">UserStatus</span>::<span class="vr">Banned</span>;
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128161;</span>
+            <p><strong>R&egrave;gle d'or :</strong> Une entit&eacute; ne doit <strong>jamais &ecirc;tre dans un &eacute;tat invalide</strong>.
+            Le constructeur priv&eacute; + factory method garantissent que l'objet est toujours coh&eacute;rent d&egrave;s sa cr&eacute;ation.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         VALUE OBJECTS
+         ============================ -->
+    <section class="concept" id="value-objects">
+        <div class="concept-header">
+            <div class="concept-icon">&#9679;</div>
+            <div class="concept-title-group">
+                <h2>Value Objects</h2>
+                <div class="concept-subtitle">Objets d&eacute;finis par leurs attributs, pas par une identit&eacute;</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Un Value Object est <strong>immutable</strong> et compar&eacute; <strong>par valeur</strong>.
+            Il encapsule une r&egrave;gle m&eacute;tier et remplace les types primitifs
+            (<code>string</code>, <code>int</code>) par des <strong>concepts m&eacute;tier explicites</strong>.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/</span>Email.php</span>
+                    <span class="tag tag-domain">Value Object</span>
+                </div>
+                <pre><code><span class="kw">final readonly class</span> <span class="cl">Email</span>
+{
+    <span class="kw">private function</span> <span class="fn">__construct</span>(
+        <span class="kw">public</span> <span class="ty">string</span> <span class="vr">$value</span>,
+    ) {}
+
+    <span class="kw">public static function</span> <span class="fn">from</span>(<span class="ty">string</span> <span class="vr">$email</span>): <span class="ty">self</span>
+    {
+        <span class="kw">if</span> (!<span class="fn">filter_var</span>(<span class="vr">$email</span>, FILTER_VALIDATE_EMAIL)) {
+            <span class="kw">throw new</span> <span class="cl">InvalidEmail</span>(<span class="vr">$email</span>);
+        }
+        <span class="kw">return new</span> <span class="ty">self</span>(<span class="fn">mb_strtolower</span>(<span class="vr">$email</span>));
+    }
+
+    <span class="kw">public function</span> <span class="fn">equals</span>(<span class="ty">self</span> <span class="vr">$other</span>): <span class="ty">bool</span>
+    {
+        <span class="kw">return</span> <span class="vr">$this</span>-><span class="vr">value</span> === <span class="vr">$other</span>-><span class="vr">value</span>;
+    }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/</span>Money.php</span>
+                    <span class="tag tag-domain">Value Object</span>
+                </div>
+                <pre><code><span class="kw">final readonly class</span> <span class="cl">Money</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">public</span> <span class="ty">int</span> <span class="vr">$cents</span>,
+        <span class="kw">public</span> <span class="cl">Currency</span> <span class="vr">$currency</span>,
+    ) {
+        <span class="kw">if</span> (<span class="vr">$cents</span> < <span class="nb">0</span>) {
+            <span class="kw">throw new</span> <span class="cl">NegativeAmount</span>();
+        }
+    }
+
+    <span class="cm">// Immutable : retourne une NOUVELLE instance</span>
+    <span class="kw">public function</span> <span class="fn">add</span>(<span class="ty">self</span> <span class="vr">$other</span>): <span class="ty">self</span>
+    {
+        <span class="kw">if</span> (!<span class="vr">$this</span>-><span class="vr">currency</span>-><span class="fn">equals</span>(<span class="vr">$other</span>-><span class="vr">currency</span>)) {
+            <span class="kw">throw new</span> <span class="cl">CurrencyMismatch</span>();
+        }
+        <span class="kw">return new</span> <span class="ty">self</span>(
+            <span class="vr">$this</span>-><span class="vr">cents</span> + <span class="vr">$other</span>-><span class="vr">cents</span>,
+            <span class="vr">$this</span>-><span class="vr">currency</span>,
+        );
+    }
+
+    <span class="kw">public function</span> <span class="fn">equals</span>(<span class="ty">self</span> <span class="vr">$other</span>): <span class="ty">bool</span>
+    {
+        <span class="kw">return</span> <span class="vr">$this</span>-><span class="vr">cents</span> === <span class="vr">$other</span>-><span class="vr">cents</span>
+            && <span class="vr">$this</span>-><span class="vr">currency</span>-><span class="fn">equals</span>(<span class="vr">$other</span>-><span class="vr">currency</span>);
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#9889;</span>
+            <p><strong>Primitives Obsession :</strong> Remplacez <code>string $email</code> par <code>Email $email</code>,
+            <code>float $price</code> par <code>Money $price</code>. Vos <strong>types deviennent votre documentation</strong>
+            et la validation est garantie partout.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         AGGREGATES
+         ============================ -->
+    <section class="concept" id="aggregates">
+        <div class="concept-header">
+            <div class="concept-icon">&#11042;</div>
+            <div class="concept-title-group">
+                <h2>Aggregates</h2>
+                <div class="concept-subtitle">Groupe coh&eacute;rent d'objets avec une racine unique</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Un Aggregate est un <strong>cluster d'entit&eacute;s et de value objects</strong> trait&eacute; comme une unit&eacute;.
+            Toute modification passe par la <strong>racine</strong> (Aggregate Root), qui prot&egrave;ge
+            les <strong>invariants m&eacute;tier</strong> du groupe entier.
+        </p>
+
+        <div class="code-single">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/Order/</span>Order.php</span>
+                    <span class="tag tag-domain">Aggregate Root</span>
+                </div>
+                <pre><code><span class="kw">final class</span> <span class="cl">Order</span>  <span class="cm">// &larr; Aggregate Root</span>
+{
+    <span class="cm">/** @var OrderLine[] */</span>
+    <span class="kw">private array</span> <span class="vr">$lines</span> = [];
+
+    <span class="kw">private function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="cl">OrderId</span> <span class="vr">$id</span>,
+        <span class="kw">private readonly</span> <span class="cl">CustomerId</span> <span class="vr">$customerId</span>,
+        <span class="kw">private</span> <span class="cl">OrderStatus</span> <span class="vr">$status</span>,
+    ) {}
+
+    <span class="kw">public static function</span> <span class="fn">place</span>(<span class="cl">CustomerId</span> <span class="vr">$customerId</span>): <span class="ty">self</span>
+    {
+        <span class="kw">return new</span> <span class="ty">self</span>(<span class="cl">OrderId</span>::<span class="fn">generate</span>(), <span class="vr">$customerId</span>, <span class="cl">OrderStatus</span>::<span class="vr">Draft</span>);
+    }
+
+    <span class="cm">// Toute modification passe par l'Aggregate Root</span>
+    <span class="kw">public function</span> <span class="fn">addLine</span>(<span class="cl">ProductId</span> <span class="vr">$productId</span>, <span class="cl">Money</span> <span class="vr">$price</span>, <span class="ty">int</span> <span class="vr">$qty</span>): <span class="ty">void</span>
+    {
+        <span class="kw">if</span> (<span class="vr">$this</span>-><span class="vr">status</span> !== <span class="cl">OrderStatus</span>::<span class="vr">Draft</span>) {
+            <span class="kw">throw new</span> <span class="cl">CannotModifyConfirmedOrder</span>();
+        }
+        <span class="kw">if</span> (<span class="fn">count</span>(<span class="vr">$this</span>-><span class="vr">lines</span>) >= <span class="nb">20</span>) {
+            <span class="kw">throw new</span> <span class="cl">OrderLineLimitReached</span>();  <span class="cm">// Invariant m&eacute;tier</span>
+        }
+        <span class="vr">$this</span>-><span class="vr">lines</span>[] = <span class="kw">new</span> <span class="cl">OrderLine</span>(<span class="vr">$productId</span>, <span class="vr">$price</span>, <span class="vr">$qty</span>);
+    }
+
+    <span class="kw">public function</span> <span class="fn">confirm</span>(): <span class="ty">void</span>
+    {
+        <span class="kw">if</span> (<span class="fn">empty</span>(<span class="vr">$this</span>-><span class="vr">lines</span>)) {
+            <span class="kw">throw new</span> <span class="cl">EmptyOrderCannotBeConfirmed</span>();
+        }
+        <span class="vr">$this</span>-><span class="vr">status</span> = <span class="cl">OrderStatus</span>::<span class="vr">Confirmed</span>;
+    }
+
+    <span class="kw">public function</span> <span class="fn">total</span>(): <span class="cl">Money</span>
+    {
+        <span class="kw">return</span> <span class="fn">array_reduce</span>(
+            <span class="vr">$this</span>-><span class="vr">lines</span>,
+            <span class="kw">fn</span>(<span class="cl">Money</span> <span class="vr">$sum</span>, <span class="cl">OrderLine</span> <span class="vr">$l</span>) => <span class="vr">$sum</span>-><span class="fn">add</span>(<span class="vr">$l</span>-><span class="fn">subtotal</span>()),
+            <span class="kw">new</span> <span class="cl">Money</span>(<span class="nb">0</span>, <span class="cl">Currency</span>::<span class="vr">EUR</span>),
+        );
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128270;</span>
+            <p><strong>R&egrave;gle :</strong> On ne r&eacute;f&eacute;rence un Aggregate que par l'<strong>ID de sa racine</strong>.
+            <code>Order</code> contient un <code>CustomerId</code>, pas un objet <code>Customer</code>.
+            Cela garantit des <strong>fronti&egrave;res transactionnelles claires</strong>.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         REPOSITORIES
+         ============================ -->
+    <section class="concept" id="repositories">
+        <div class="concept-header">
+            <div class="concept-icon">&#9881;</div>
+            <div class="concept-title-group">
+                <h2>Repositories</h2>
+                <div class="concept-subtitle">Abstraction de la persistance dans le domaine</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Le Repository offre une <strong>illusion de collection en m&eacute;moire</strong> pour les Aggregates.
+            L'<strong>interface</strong> vit dans le domaine, l'<strong>impl&eacute;mentation</strong> dans l'infrastructure.
+            Le domaine ne conna&icirc;t ni SQL, ni Doctrine, ni Redis.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/Order/</span>OrderRepository.php</span>
+                    <span class="tag tag-domain">Domain</span>
+                </div>
+                <pre><code><span class="cm">// Interface dans la couche Domain</span>
+<span class="cm">// Aucune d&eacute;pendance technique</span>
+
+<span class="kw">interface</span> <span class="cl">OrderRepository</span>
+{
+    <span class="cm">/**
+     * @throws OrderNotFound
+     */</span>
+    <span class="kw">public function</span> <span class="fn">get</span>(<span class="cl">OrderId</span> <span class="vr">$id</span>): <span class="cl">Order</span>;
+
+    <span class="kw">public function</span> <span class="fn">save</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">void</span>;
+
+    <span class="cm">/**
+     * @return Order[]
+     */</span>
+    <span class="kw">public function</span> <span class="fn">findByCustomer</span>(
+        <span class="cl">CustomerId</span> <span class="vr">$customerId</span>,
+    ): <span class="ty">array</span>;
+}
+
+<span class="cm">// Note : pas de delete() si le m&eacute;tier</span>
+<span class="cm">// ne supprime jamais de commandes !</span></code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Infra/Persistence/</span>DoctrineOrderRepository.php</span>
+                    <span class="tag tag-infra">Infrastructure</span>
+                </div>
+                <pre><code><span class="cm">// Impl&eacute;mentation technique dans Infrastructure</span>
+
+<span class="kw">final readonly class</span> <span class="cl">DoctrineOrderRepository</span>
+    <span class="kw">implements</span> <span class="cl">OrderRepository</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private</span> <span class="cl">EntityManagerInterface</span> <span class="vr">$em</span>,
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">get</span>(<span class="cl">OrderId</span> <span class="vr">$id</span>): <span class="cl">Order</span>
+    {
+        <span class="kw">return</span> <span class="vr">$this</span>-><span class="vr">em</span>-><span class="fn">find</span>(<span class="cl">Order</span>::<span class="kw">class</span>, <span class="vr">$id</span>)
+            ?? <span class="kw">throw new</span> <span class="cl">OrderNotFound</span>(<span class="vr">$id</span>);
+    }
+
+    <span class="kw">public function</span> <span class="fn">save</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">void</span>
+    {
+        <span class="vr">$this</span>-><span class="vr">em</span>-><span class="fn">persist</span>(<span class="vr">$order</span>);
+        <span class="vr">$this</span>-><span class="vr">em</span>-><span class="fn">flush</span>();
+    }
+
+    <span class="kw">public function</span> <span class="fn">findByCustomer</span>(
+        <span class="cl">CustomerId</span> <span class="vr">$customerId</span>,
+    ): <span class="ty">array</span> {
+        <span class="kw">return</span> <span class="vr">$this</span>-><span class="vr">em</span>
+            -><span class="fn">getRepository</span>(<span class="cl">Order</span>::<span class="kw">class</span>)
+            -><span class="fn">findBy</span>([<span class="st">'customerId'</span> => <span class="vr">$customerId</span>]);
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128218;</span>
+            <p><strong>Port / Adapter :</strong> L'interface est un <strong>Port</strong> (domaine),
+            l'impl&eacute;mentation Doctrine est un <strong>Adapter</strong> (infra).
+            Pour les tests, cr&eacute;ez un <code>InMemoryOrderRepository</code> &mdash; z&eacute;ro base de donn&eacute;es, tests ultra-rapides.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         DOMAIN EVENTS
+         ============================ -->
+    <section class="concept" id="domain-events">
+        <div class="concept-header">
+            <div class="concept-icon">&#9889;</div>
+            <div class="concept-title-group">
+                <h2>Domain Events</h2>
+                <div class="concept-subtitle">Capturer les faits m&eacute;tier qui se sont produits</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Un Domain Event repr&eacute;sente <strong>un fait pass&eacute;</strong> dans le domaine :
+            &laquo; une commande a &eacute;t&eacute; confirm&eacute;e &raquo;. Il permet de <strong>d&eacute;coupler</strong> les effets de bord
+            (email, stats, sync) de la logique m&eacute;tier principale.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Domain/Order/Event/</span>OrderConfirmed.php</span>
+                    <span class="tag tag-domain">Domain Event</span>
+                </div>
+                <pre><code><span class="cm">// Un fait immutable au pass&eacute;</span>
+
+<span class="kw">final readonly class</span> <span class="cl">OrderConfirmed</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">public</span> <span class="cl">OrderId</span> <span class="vr">$orderId</span>,
+        <span class="kw">public</span> <span class="cl">CustomerId</span> <span class="vr">$customerId</span>,
+        <span class="kw">public</span> <span class="cl">Money</span> <span class="vr">$total</span>,
+        <span class="kw">public</span> \<span class="cl">DateTimeImmutable</span> <span class="vr">$occurredAt</span>,
+    ) {}
+}
+
+<span class="cm">// Dans l'Aggregate Root Order :</span>
+<span class="kw">public function</span> <span class="fn">confirm</span>(): <span class="ty">void</span>
+{
+    <span class="cm">// ... validations ...</span>
+    <span class="vr">$this</span>-><span class="vr">status</span> = <span class="cl">OrderStatus</span>::<span class="vr">Confirmed</span>;
+
+    <span class="vr">$this</span>-><span class="fn">recordEvent</span>(<span class="kw">new</span> <span class="cl">OrderConfirmed</span>(
+        <span class="vr">$this</span>-><span class="vr">id</span>,
+        <span class="vr">$this</span>-><span class="vr">customerId</span>,
+        <span class="vr">$this</span>-><span class="fn">total</span>(),
+        <span class="kw">new</span> \<span class="cl">DateTimeImmutable</span>(),
+    ));
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Application/</span>SendOrderConfirmationEmail.php</span>
+                    <span class="tag tag-good">Listener</span>
+                </div>
+                <pre><code><span class="cm">// Un listener r&eacute;agit &agrave; l'&eacute;v&eacute;nement</span>
+<span class="cm">// D&eacute;coupl&eacute; de la logique de commande</span>
+
+<span class="at">#[AsEventListener(OrderConfirmed::class)]</span>
+<span class="kw">final readonly class</span> <span class="cl">SendOrderConfirmationEmail</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private</span> <span class="cl">Mailer</span> <span class="vr">$mailer</span>,
+        <span class="kw">private</span> <span class="cl">CustomerRepository</span> <span class="vr">$customers</span>,
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">__invoke</span>(
+        <span class="cl">OrderConfirmed</span> <span class="vr">$event</span>,
+    ): <span class="ty">void</span> {
+        <span class="vr">$customer</span> = <span class="vr">$this</span>-><span class="vr">customers</span>
+            -><span class="fn">get</span>(<span class="vr">$event</span>-><span class="vr">customerId</span>);
+
+        <span class="vr">$this</span>-><span class="vr">mailer</span>-><span class="fn">send</span>(
+            <span class="kw">new</span> <span class="cl">ConfirmationEmail</span>(
+                <span class="vr">$customer</span>-><span class="fn">email</span>(),
+                <span class="vr">$event</span>-><span class="vr">orderId</span>,
+                <span class="vr">$event</span>-><span class="vr">total</span>,
+            ),
+        );
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#127919;</span>
+            <p><strong>Avantage :</strong> L'Aggregate <code>Order</code> n'a <strong>aucune id&eacute;e</strong>
+            qu'un email sera envoy&eacute;. Vous pouvez ajouter 10 listeners (stats, logs, webhooks)
+            sans toucher au domaine &mdash; <strong>Open/Closed Principle</strong> appliqu&eacute; naturellement.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         BOUNDED CONTEXTS
+         ============================ -->
+    <section class="concept" id="bounded-contexts">
+        <div class="concept-header">
+            <div class="concept-icon">&#11200;</div>
+            <div class="concept-title-group">
+                <h2>Bounded Contexts</h2>
+                <div class="concept-subtitle">D&eacute;limiter les fronti&egrave;res de chaque sous-domaine</div>
+            </div>
+        </div>
+
+        <p class="concept-desc">
+            Un m&ecirc;me mot peut avoir des <strong>significations diff&eacute;rentes</strong> selon le contexte.
+            Un <strong>Bounded Context</strong> d&eacute;finit les fronti&egrave;res o&ugrave; un mod&egrave;le est valide.
+            Chaque contexte a son propre <strong>Ubiquitous Language</strong> et ses propres mod&egrave;les.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Catalog/Domain/</span>Product.php</span>
+                    <span class="tag tag-domain">Contexte : Catalogue</span>
+                </div>
+                <pre><code><span class="cm">// Dans le contexte &laquo; Catalogue &raquo;</span>
+<span class="cm">// Product = fiche produit affich&eacute;e</span>
+
+<span class="kw">namespace</span> <span class="cl">App\Catalog\Domain</span>;
+
+<span class="kw">final class</span> <span class="cl">Product</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="cl">ProductId</span> <span class="vr">$id</span>,
+        <span class="kw">private</span> <span class="ty">string</span> <span class="vr">$name</span>,
+        <span class="kw">private</span> <span class="ty">string</span> <span class="vr">$description</span>,
+        <span class="kw">private</span> <span class="cl">Money</span> <span class="vr">$price</span>,
+        <span class="kw">private</span> <span class="cl">Category</span> <span class="vr">$category</span>,
+        <span class="kw">private array</span> <span class="vr">$images</span>,
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">rename</span>(<span class="ty">string</span> <span class="vr">$name</span>): <span class="ty">void</span>
+    { <span class="cm">/* ... */</span> }
+
+    <span class="kw">public function</span> <span class="fn">reprice</span>(<span class="cl">Money</span> <span class="vr">$price</span>): <span class="ty">void</span>
+    { <span class="cm">/* ... */</span> }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename"><span class="folder">Warehouse/Domain/</span>Product.php</span>
+                    <span class="tag tag-domain">Contexte : Entrep&ocirc;t</span>
+                </div>
+                <pre><code><span class="cm">// Dans le contexte &laquo; Entrep&ocirc;t &raquo;</span>
+<span class="cm">// Product = stock physique &agrave; g&eacute;rer</span>
+
+<span class="kw">namespace</span> <span class="cl">App\Warehouse\Domain</span>;
+
+<span class="kw">final class</span> <span class="cl">Product</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="cl">ProductId</span> <span class="vr">$id</span>,
+        <span class="kw">private</span> <span class="ty">string</span> <span class="vr">$sku</span>,
+        <span class="kw">private</span> <span class="ty">int</span> <span class="vr">$quantityOnHand</span>,
+        <span class="kw">private</span> <span class="cl">Location</span> <span class="vr">$location</span>,
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">receive</span>(<span class="ty">int</span> <span class="vr">$qty</span>): <span class="ty">void</span>
+    {
+        <span class="vr">$this</span>-><span class="vr">quantityOnHand</span> += <span class="vr">$qty</span>;
+    }
+
+    <span class="kw">public function</span> <span class="fn">pick</span>(<span class="ty">int</span> <span class="vr">$qty</span>): <span class="ty">void</span>
+    {
+        <span class="kw">if</span> (<span class="vr">$qty</span> > <span class="vr">$this</span>-><span class="vr">quantityOnHand</span>) {
+            <span class="kw">throw new</span> <span class="cl">InsufficientStock</span>();
+        }
+        <span class="vr">$this</span>-><span class="vr">quantityOnHand</span> -= <span class="vr">$qty</span>;
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128736;</span>
+            <p><strong>Structure de dossiers PHP :</strong> Chaque Bounded Context devient un <strong>module isol&eacute;</strong> :
+            <code>src/Catalog/</code>, <code>src/Warehouse/</code>, <code>src/Billing/</code>.
+            Ils communiquent entre eux via des <strong>Domain Events</strong> ou une <strong>couche anti-corruption</strong>,
+            jamais par acc&egrave;s direct aux classes internes.</p>
+        </div>
+    </section>
+
+</main>
+
+<!-- ============================
+     FOOTER
+     ============================ -->
+<footer>
+    <p class="ddd-logo">DOMAIN-DRIVEN DESIGN</p>
+    <p>Concevez des applications PHP qui parlent le langage du m&eacute;tier.</p>
+    <p style="margin-top:12px;">
+        Inspir&eacute; par <a href="https://www.domainlanguage.com/ddd/" target="_blank">Eric Evans</a>
+        &amp; <a href="https://www.amazon.com/Implementing-Domain-Driven-Design-Vaughn-Vernon/dp/0321834577" target="_blank">Vaughn Vernon</a>
+    </p>
+</footer>
+
+<!-- ============================
+     JAVASCRIPT
+     ============================ -->
+<script>
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    document.querySelectorAll('.concept, .layers-section').forEach(el => observer.observe(el));
+
+    // Back to top button
+    const backBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backBtn.classList.toggle('show', window.scrollY > 600);
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(link.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
