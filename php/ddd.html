@@ -741,13 +741,19 @@
         }
 
         /* ============================================
-           LINK BACK TO SOLID
+           TOP NAV (Accueil + SOLID)
            ============================================ */
-        .sibling-link {
+        .top-nav {
             position: fixed;
             top: 24px;
             right: 24px;
             z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        .sibling-link {
+            position: static;
             padding: 10px 18px;
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -780,7 +786,10 @@
 <div class="bg-mesh"></div>
 
 <!-- Navigation -->
-<a href="index.html" class="sibling-link"><span class="arrow">&larr;</span> Principes SOLID</a>
+<nav class="top-nav">
+    <a href="index.html" class="sibling-link">Accueil</a>
+    <a href="solid.html" class="sibling-link"><span class="arrow">&larr;</span> Principes SOLID</a>
+</nav>
 <a href="#top" class="back-to-top" id="backToTop" title="Retour en haut">&uarr;</a>
 
 <!-- ============================

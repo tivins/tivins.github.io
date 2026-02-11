@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les Principes SOLID en PHP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="solid.css">
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="bg-grid"></div>
+<div class="bg-gradient-orbs"></div>
+
+<!-- Navigation -->
+<nav class="top-nav">
+    <a href="index.html" class="sibling-link">Accueil</a>
+    <a href="ddd.html" class="sibling-link">DDD &rarr;</a>
+</nav>
+<!-- Back to Top -->
+<a href="#top" class="back-to-top" id="backToTop" title="Retour en haut">&uarr;</a>
+
+<!-- ============================
+     HERO
+     ============================ -->
+<section class="hero" id="top">
+    <div class="hero-content">
+        <div class="hero-badge"><span class="dot"></span> Design Patterns &middot; PHP</div>
+        <h1>
+            <span class="letter letter-s">S</span><!--
+            --><span class="letter letter-o">O</span><!--
+            --><span class="letter letter-l">L</span><!--
+            --><span class="letter letter-i">I</span><!--
+            --><span class="letter letter-d">D</span>
+        </h1>
+        <p class="hero-subtitle">
+            Les <strong>5 principes fondamentaux</strong> de la programmation orient&eacute;e objet
+            pour &eacute;crire du code PHP <strong>propre, maintenable et &eacute;volutif</strong>.
+        </p>
+        <nav class="hero-nav">
+            <a href="#srp" class="nav-s"><span class="nav-letter">S</span> Single Responsibility</a>
+            <a href="#ocp" class="nav-o"><span class="nav-letter">O</span> Open / Closed</a>
+            <a href="#lsp" class="nav-l"><span class="nav-letter">L</span> Liskov Substitution</a>
+            <a href="#isp" class="nav-i"><span class="nav-letter">I</span> Interface Segregation</a>
+            <a href="#dip" class="nav-d"><span class="nav-letter">D</span> Dependency Inversion</a>
+        </nav>
+    </div>
+    <div class="scroll-indicator">
+        <div class="mouse"></div>
+        scroll
+    </div>
+</section>
+
+<main class="container">
+
+    <!-- ============================
+         S - Single Responsibility
+         ============================ -->
+    <section class="principle" id="srp">
+        <div class="principle-header">
+            <div class="principle-icon">S</div>
+            <div class="principle-title-group">
+                <h2>Single Responsibility</h2>
+                <div class="principle-fullname">Principe de responsabilit&eacute; unique</div>
+            </div>
+        </div>
+
+        <p class="principle-desc">
+            Une classe ne doit avoir <strong>qu'une seule raison de changer</strong>.
+            Chaque classe doit encapsuler une seule responsabilit&eacute; et la remplir enti&egrave;rement.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">UserManager.php</span>
+                    <span class="tag tag-bad">Violation</span>
+                </div>
+                <pre><code><span class="cm">// Cette classe fait TOUT : validation,</span>
+<span class="cm">// persistance ET envoi d'emails</span>
+
+<span class="kw">class</span> <span class="cl">UserManager</span>
+{
+    <span class="kw">public function</span> <span class="fn">register</span>(<span class="ty">string</span> <span class="vr">$email</span>, <span class="ty">string</span> <span class="vr">$password</span>): <span class="ty">void</span>
+    {
+        <span class="cm">// Validation</span>
+        <span class="kw">if</span> (!<span class="fn">filter_var</span>(<span class="vr">$email</span>, FILTER_VALIDATE_EMAIL)) {
+            <span class="kw">throw new</span> \<span class="cl">InvalidArgumentException</span>(<span class="st">'Email invalide'</span>);
+        }
+
+        <span class="cm">// Sauvegarde en base</span>
+        <span class="vr">$pdo</span> = <span class="kw">new</span> \<span class="cl">PDO</span>(<span class="st">'mysql:host=localhost'</span>);
+        <span class="vr">$stmt</span> = <span class="vr">$pdo</span>-><span class="fn">prepare</span>(<span class="st">'INSERT INTO users ...'</span>);
+        <span class="vr">$stmt</span>-><span class="fn">execute</span>([<span class="vr">$email</span>, <span class="vr">$password</span>]);
+
+        <span class="cm">// Envoi d'email</span>
+        <span class="fn">mail</span>(<span class="vr">$email</span>, <span class="st">'Bienvenue!'</span>, <span class="st">'...'</span>);
+    }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">UserService.php</span>
+                    <span class="tag tag-good">Correct</span>
+                </div>
+                <pre><code><span class="cm">// Chaque classe = une responsabilit&eacute;</span>
+
+<span class="kw">class</span> <span class="cl">UserValidator</span>
+{
+    <span class="kw">public function</span> <span class="fn">validate</span>(<span class="ty">string</span> <span class="vr">$email</span>): <span class="ty">bool</span>
+    {
+        <span class="kw">return</span> <span class="fn">filter_var</span>(<span class="vr">$email</span>, FILTER_VALIDATE_EMAIL) !== <span class="nb">false</span>;
+    }
+}
+
+<span class="kw">class</span> <span class="cl">UserRepository</span>
+{
+    <span class="kw">public function</span> <span class="fn">save</span>(<span class="cl">User</span> <span class="vr">$user</span>): <span class="ty">void</span> { <span class="cm">/* ... */</span> }
+}
+
+<span class="kw">class</span> <span class="cl">WelcomeMailer</span>
+{
+    <span class="kw">public function</span> <span class="fn">send</span>(<span class="cl">User</span> <span class="vr">$user</span>): <span class="ty">void</span> { <span class="cm">/* ... */</span> }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128161;</span>
+            <p><strong>Astuce :</strong> Si vous d&eacute;crivez votre classe avec &laquo; ET &raquo; (elle valide ET sauvegarde ET envoie),
+            c'est un signe qu'elle a trop de responsabilit&eacute;s.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         O - Open / Closed
+         ============================ -->
+    <section class="principle" id="ocp">
+        <div class="principle-header">
+            <div class="principle-icon">O</div>
+            <div class="principle-title-group">
+                <h2>Open / Closed</h2>
+                <div class="principle-fullname">Principe ouvert / ferm&eacute;</div>
+            </div>
+        </div>
+
+        <p class="principle-desc">
+            Une classe doit &ecirc;tre <strong>ouverte &agrave; l'extension</strong> mais
+            <strong>ferm&eacute;e &agrave; la modification</strong>. On ajoute du comportement sans toucher au code existant.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">DiscountCalculator.php</span>
+                    <span class="tag tag-bad">Violation</span>
+                </div>
+                <pre><code><span class="cm">// Chaque nouveau type de remise</span>
+<span class="cm">// oblige &agrave; modifier cette classe</span>
+
+<span class="kw">class</span> <span class="cl">DiscountCalculator</span>
+{
+    <span class="kw">public function</span> <span class="fn">calculate</span>(
+        <span class="cl">Order</span> <span class="vr">$order</span>,
+        <span class="ty">string</span> <span class="vr">$type</span>
+    ): <span class="ty">float</span> {
+        <span class="kw">return match</span>(<span class="vr">$type</span>) {
+            <span class="st">'percentage'</span> => <span class="vr">$order</span>-><span class="vr">total</span> * <span class="nb">0.1</span>,
+            <span class="st">'fixed'</span>      => <span class="vr">$order</span>-><span class="vr">total</span> - <span class="nb">5</span>,
+            <span class="st">'vip'</span>        => <span class="vr">$order</span>-><span class="vr">total</span> * <span class="nb">0.2</span>,
+            <span class="cm">// ... encore et encore</span>
+        };
+    }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">Discount.php</span>
+                    <span class="tag tag-good">Correct</span>
+                </div>
+                <pre><code><span class="kw">interface</span> <span class="cl">Discount</span>
+{
+    <span class="kw">public function</span> <span class="fn">apply</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">float</span>;
+}
+
+<span class="kw">class</span> <span class="cl">PercentageDiscount</span> <span class="kw">implements</span> <span class="cl">Discount</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="ty">float</span> <span class="vr">$rate</span>
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">apply</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">float</span>
+    {
+        <span class="kw">return</span> <span class="vr">$order</span>-><span class="vr">total</span> * <span class="vr">$this</span>-><span class="vr">rate</span>;
+    }
+}
+
+<span class="cm">// Ajouter un nouveau type ? Cr&eacute;ez une classe !</span>
+<span class="kw">class</span> <span class="cl">VipDiscount</span> <span class="kw">implements</span> <span class="cl">Discount</span> { <span class="cm">/* ... */</span> }</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#9889;</span>
+            <p><strong>Pattern :</strong> Utilisez des <strong>interfaces</strong> et le <strong>Strategy Pattern</strong>
+            pour permettre l'extension sans modification du code existant.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         L - Liskov Substitution
+         ============================ -->
+    <section class="principle" id="lsp">
+        <div class="principle-header">
+            <div class="principle-icon">L</div>
+            <div class="principle-title-group">
+                <h2>Liskov Substitution</h2>
+                <div class="principle-fullname">Principe de substitution de Liskov</div>
+            </div>
+        </div>
+
+        <p class="principle-desc">
+            Une sous-classe doit pouvoir <strong>remplacer sa classe parente</strong> sans casser le comportement
+            du programme. Les enfants doivent respecter le &laquo; contrat &raquo; du parent.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">ReadOnlyRepository.php</span>
+                    <span class="tag tag-bad">Violation</span>
+                </div>
+                <pre><code><span class="kw">class</span> <span class="cl">FileRepository</span>
+{
+    <span class="kw">public function</span> <span class="fn">read</span>(<span class="ty">string</span> <span class="vr">$path</span>): <span class="ty">string</span>
+    {
+        <span class="kw">return</span> <span class="fn">file_get_contents</span>(<span class="vr">$path</span>);
+    }
+
+    <span class="kw">public function</span> <span class="fn">write</span>(<span class="ty">string</span> <span class="vr">$path</span>, <span class="ty">string</span> <span class="vr">$data</span>): <span class="ty">void</span>
+    {
+        <span class="fn">file_put_contents</span>(<span class="vr">$path</span>, <span class="vr">$data</span>);
+    }
+}
+
+<span class="cm">// Casse le contrat du parent !</span>
+<span class="kw">class</span> <span class="cl">ReadOnlyFileRepo</span> <span class="kw">extends</span> <span class="cl">FileRepository</span>
+{
+    <span class="kw">public function</span> <span class="fn">write</span>(<span class="ty">string</span> <span class="vr">$path</span>, <span class="ty">string</span> <span class="vr">$data</span>): <span class="ty">void</span>
+    {
+        <span class="kw">throw new</span> \<span class="cl">RuntimeException</span>(<span class="st">'Interdit !'</span>);
+    }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">FileInterfaces.php</span>
+                    <span class="tag tag-good">Correct</span>
+                </div>
+                <pre><code><span class="kw">interface</span> <span class="cl">Readable</span>
+{
+    <span class="kw">public function</span> <span class="fn">read</span>(<span class="ty">string</span> <span class="vr">$path</span>): <span class="ty">string</span>;
+}
+
+<span class="kw">interface</span> <span class="cl">Writable</span>
+{
+    <span class="kw">public function</span> <span class="fn">write</span>(<span class="ty">string</span> <span class="vr">$path</span>, <span class="ty">string</span> <span class="vr">$data</span>): <span class="ty">void</span>;
+}
+
+<span class="cm">// Chaque classe respecte son contrat</span>
+<span class="kw">class</span> <span class="cl">ReadOnlyFileRepo</span> <span class="kw">implements</span> <span class="cl">Readable</span>
+{
+    <span class="kw">public function</span> <span class="fn">read</span>(<span class="ty">string</span> <span class="vr">$path</span>): <span class="ty">string</span>
+    {
+        <span class="kw">return</span> <span class="fn">file_get_contents</span>(<span class="vr">$path</span>);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">FullFileRepo</span> <span class="kw">implements</span> <span class="cl">Readable</span>, <span class="cl">Writable</span>
+{
+    <span class="cm">/* read() + write() */</span>
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128270;</span>
+            <p><strong>R&egrave;gle d'or :</strong> Si une sous-classe <strong>l&egrave;ve une exception</strong> l&agrave; o&ugrave; le parent
+            ne le fait pas, ou <strong>ignore</strong> une m&eacute;thode h&eacute;rit&eacute;e, vous violez Liskov.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         I - Interface Segregation
+         ============================ -->
+    <section class="principle" id="isp">
+        <div class="principle-header">
+            <div class="principle-icon">I</div>
+            <div class="principle-title-group">
+                <h2>Interface Segregation</h2>
+                <div class="principle-fullname">Principe de s&eacute;gr&eacute;gation des interfaces</div>
+            </div>
+        </div>
+
+        <p class="principle-desc">
+            Aucun client ne devrait &ecirc;tre forc&eacute; de d&eacute;pendre de m&eacute;thodes <strong>qu'il n'utilise pas</strong>.
+            Pr&eacute;f&eacute;rez plusieurs petites interfaces sp&eacute;cifiques &agrave; une seule interface g&eacute;n&eacute;rale.
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">Worker.php</span>
+                    <span class="tag tag-bad">Violation</span>
+                </div>
+                <pre><code><span class="cm">// Interface trop large ("fat interface")</span>
+
+<span class="kw">interface</span> <span class="cl">Worker</span>
+{
+    <span class="kw">public function</span> <span class="fn">work</span>(): <span class="ty">void</span>;
+    <span class="kw">public function</span> <span class="fn">eat</span>(): <span class="ty">void</span>;
+    <span class="kw">public function</span> <span class="fn">sleep</span>(): <span class="ty">void</span>;
+}
+
+<span class="cm">// Un robot ne mange pas et ne dort pas !</span>
+<span class="kw">class</span> <span class="cl">Robot</span> <span class="kw">implements</span> <span class="cl">Worker</span>
+{
+    <span class="kw">public function</span> <span class="fn">work</span>(): <span class="ty">void</span>  { <span class="cm">/* OK */</span> }
+    <span class="kw">public function</span> <span class="fn">eat</span>(): <span class="ty">void</span>   { <span class="cm">/* ??? */</span> }
+    <span class="kw">public function</span> <span class="fn">sleep</span>(): <span class="ty">void</span> { <span class="cm">/* ??? */</span> }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">SmallInterfaces.php</span>
+                    <span class="tag tag-good">Correct</span>
+                </div>
+                <pre><code><span class="kw">interface</span> <span class="cl">Workable</span>
+{
+    <span class="kw">public function</span> <span class="fn">work</span>(): <span class="ty">void</span>;
+}
+
+<span class="kw">interface</span> <span class="cl">Feedable</span>
+{
+    <span class="kw">public function</span> <span class="fn">eat</span>(): <span class="ty">void</span>;
+}
+
+<span class="kw">interface</span> <span class="cl">Sleepable</span>
+{
+    <span class="kw">public function</span> <span class="fn">sleep</span>(): <span class="ty">void</span>;
+}
+
+<span class="cm">// Chaque classe choisit ce dont elle a besoin</span>
+<span class="kw">class</span> <span class="cl">Human</span> <span class="kw">implements</span> <span class="cl">Workable</span>, <span class="cl">Feedable</span>, <span class="cl">Sleepable</span>
+{ <span class="cm">/* ... */</span> }
+
+<span class="kw">class</span> <span class="cl">Robot</span> <span class="kw">implements</span> <span class="cl">Workable</span>
+{ <span class="cm">/* Seulement work() */</span> }</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#9995;</span>
+            <p><strong>Signal d'alerte :</strong> Si vous impl&eacute;mentez une interface et laissez des m&eacute;thodes vides
+            ou avec <code style="color:var(--s-color); background:var(--bg-code); padding:2px 6px; border-radius:4px;">throw new \Exception</code>,
+            l'interface est <strong>trop grosse</strong>.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================
+         D - Dependency Inversion
+         ============================ -->
+    <section class="principle" id="dip">
+        <div class="principle-header">
+            <div class="principle-icon">D</div>
+            <div class="principle-title-group">
+                <h2>Dependency Inversion</h2>
+                <div class="principle-fullname">Principe d'inversion des d&eacute;pendances</div>
+            </div>
+        </div>
+
+        <p class="principle-desc">
+            Les modules de haut niveau ne doivent pas d&eacute;pendre des modules de bas niveau.
+            Les deux doivent d&eacute;pendre d'<strong>abstractions</strong> (interfaces).
+        </p>
+
+        <div class="code-grid">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">OrderService.php</span>
+                    <span class="tag tag-bad">Violation</span>
+                </div>
+                <pre><code><span class="cm">// Couplage fort &agrave; une impl&eacute;mentation</span>
+
+<span class="kw">class</span> <span class="cl">OrderService</span>
+{
+    <span class="kw">private</span> <span class="cl">MySqlDatabase</span> <span class="vr">$db</span>;
+    <span class="kw">private</span> <span class="cl">StripePayment</span> <span class="vr">$payment</span>;
+
+    <span class="kw">public function</span> <span class="fn">__construct</span>()
+    {
+        <span class="cm">// Instanciation directe = couplage</span>
+        <span class="vr">$this</span>-><span class="vr">db</span>      = <span class="kw">new</span> <span class="cl">MySqlDatabase</span>();
+        <span class="vr">$this</span>-><span class="vr">payment</span> = <span class="kw">new</span> <span class="cl">StripePayment</span>();
+    }
+
+    <span class="kw">public function</span> <span class="fn">place</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">void</span>
+    {
+        <span class="vr">$this</span>-><span class="vr">db</span>-><span class="fn">save</span>(<span class="vr">$order</span>);
+        <span class="vr">$this</span>-><span class="vr">payment</span>-><span class="fn">charge</span>(<span class="vr">$order</span>-><span class="vr">total</span>);
+    }
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="filename">OrderService.php</span>
+                    <span class="tag tag-good">Correct</span>
+                </div>
+                <pre><code><span class="kw">interface</span> <span class="cl">Database</span>
+{
+    <span class="kw">public function</span> <span class="fn">save</span>(<span class="ty">object</span> <span class="vr">$entity</span>): <span class="ty">void</span>;
+}
+
+<span class="kw">interface</span> <span class="cl">PaymentGateway</span>
+{
+    <span class="kw">public function</span> <span class="fn">charge</span>(<span class="ty">float</span> <span class="vr">$amount</span>): <span class="ty">bool</span>;
+}
+
+<span class="cm">// D&eacute;pend d'abstractions, pas d'impl&eacute;mentations</span>
+<span class="kw">class</span> <span class="cl">OrderService</span>
+{
+    <span class="kw">public function</span> <span class="fn">__construct</span>(
+        <span class="kw">private readonly</span> <span class="cl">Database</span> <span class="vr">$db</span>,
+        <span class="kw">private readonly</span> <span class="cl">PaymentGateway</span> <span class="vr">$payment</span>,
+    ) {}
+
+    <span class="kw">public function</span> <span class="fn">place</span>(<span class="cl">Order</span> <span class="vr">$order</span>): <span class="ty">void</span>
+    {
+        <span class="vr">$this</span>-><span class="vr">db</span>-><span class="fn">save</span>(<span class="vr">$order</span>);
+        <span class="vr">$this</span>-><span class="vr">payment</span>-><span class="fn">charge</span>(<span class="vr">$order</span>-><span class="vr">total</span>);
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <span class="icon">&#128218;</span>
+            <p><strong>En pratique :</strong> Utilisez l'<strong>injection de d&eacute;pendances</strong> via le constructeur
+            et le <strong>Service Container</strong> de votre framework (Laravel, Symfony) pour c&acirc;bler les impl&eacute;mentations.</p>
+        </div>
+    </section>
+
+</main>
+
+<!-- ============================
+     FOOTER
+     ============================ -->
+<footer>
+    <p class="solid-mini">
+        <span class="fs">S</span><span class="fo">O</span><span class="fl">L</span><span class="fi">I</span><span class="fd">D</span>
+    </p>
+    <p style="margin-top:8px;">
+        Des principes intemporels pour un code PHP professionnel.
+    </p>
+</footer>
+
+<!-- ============================
+     JAVASCRIPT
+     ============================ -->
+<script>
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        },
+        { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.principle').forEach(el => observer.observe(el));
+
+    // Back to top button
+    const backBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backBtn.classList.toggle('show', window.scrollY > 600);
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(link.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
