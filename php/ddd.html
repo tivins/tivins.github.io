@@ -7,12 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../solid.css">
     <style>
         /* ============================================
-           CSS RESET & VARIABLES
+           DDD: variables & overrides (solid.css base)
            ============================================ */
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
             --bg-primary: #06060c;
             --bg-secondary: #0d0d16;
@@ -48,18 +47,8 @@
             --font-display: 'Space Grotesk', var(--font-sans);
         }
 
-        html { scroll-behavior: smooth; }
-
-        body {
-            font-family: var(--font-sans);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
         /* ============================================
-           ANIMATED BACKGROUND
+           DDD: animated background (solid.css has .bg-grid / .bg-gradient-orbs)
            ============================================ */
         .bg-mesh {
             position: fixed;
@@ -94,55 +83,20 @@
             mask-image: radial-gradient(ellipse 70% 50% at 50% 20%, black 30%, transparent 100%);
         }
 
-        /* ============================================
-           LAYOUT
-           ============================================ */
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+        .container { max-width: 1000px; }
 
         /* ============================================
-           HERO SECTION
+           DDD: hero overrides
            ============================================ */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 60px 0;
-            position: relative;
-        }
+        .hero { position: relative; }
 
-        .hero-content {
-            animation: heroIn 1s ease-out;
-        }
-
+        .hero-content { animation: heroIn 1s ease-out; }
         @keyframes heroIn {
             from { opacity: 0; transform: translateY(50px) scale(0.97); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 22px;
-            border-radius: 100px;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            margin-bottom: 36px;
-            backdrop-filter: blur(10px);
-        }
-
+        .hero-badge { margin-bottom: 36px; gap: 10px; padding: 8px 22px; }
         .hero-badge .hex {
             width: 10px; height: 10px;
             background: var(--accent);
@@ -179,24 +133,11 @@
             margin-bottom: 32px;
         }
 
-        .hero-subtitle {
-            font-size: clamp(1rem, 2.2vw, 1.25rem);
-            color: var(--text-secondary);
-            font-weight: 300;
-            margin-bottom: 52px;
-            max-width: 640px;
-            margin-left: auto;
-            margin-right: auto;
-            line-height: 1.8;
-        }
-
-        .hero-subtitle strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
+        .hero-subtitle { margin-bottom: 52px; max-width: 640px; line-height: 1.8; }
+        .hero-subtitle strong { color: var(--text-primary); font-weight: 600; }
 
         /* ============================================
-           CONCEPT NAV (Hexagonal Grid)
+           DDD: concept nav (hexagonal grid)
            ============================================ */
         .concept-nav {
             display: flex;
@@ -251,25 +192,7 @@
         .cnav-event:hover  { border-color: var(--event-color) !important; box-shadow: 0 8px 32px var(--event-glow) !important; }
         .cnav-bc:hover     { border-color: var(--bc-color) !important; box-shadow: 0 8px 32px var(--bc-glow) !important; }
 
-        /* ============================================
-           SCROLL INDICATOR
-           ============================================ */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            font-size: 0.72rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            animation: heroIn 1s ease-out 0.6s both;
-        }
-
+        .scroll-indicator { font-size: 0.72rem; letter-spacing: 0.12em; animation: heroIn 1s ease-out 0.6s both; }
         .scroll-indicator .line {
             width: 1px;
             height: 40px;
@@ -484,125 +407,24 @@
         #bounded-contexts h2 { color: var(--bc-color); }
 
         /* ============================================
-           CODE BLOCKS
+           DDD: code blocks overrides
            ============================================ */
-        .code-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
         .code-single {
             display: grid;
             grid-template-columns: 1fr;
             gap: 16px;
             margin-bottom: 20px;
         }
-
-        @media (max-width: 768px) {
-            .code-grid { grid-template-columns: 1fr; }
-        }
-
-        .code-block {
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            background: var(--bg-code);
-            overflow: hidden;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .code-block:hover {
-            border-color: var(--border-hover);
-            box-shadow: 0 8px 40px rgba(0,0,0,.35);
-        }
-
-        .code-block-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(255,255,255,.015);
-        }
-
-        .code-block-header .filename {
-            font-family: var(--font-mono);
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .code-block-header .filename .folder {
-            color: var(--text-muted);
-        }
-
-        .code-block-header .tag {
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 100px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .tag-bad { background: #ef444425; color: #f87171; }
-        .tag-good { background: #22c55e25; color: #4ade80; }
+        .code-block:hover { border-color: var(--border-hover); box-shadow: 0 8px 40px rgba(0,0,0,.35); }
+        .code-block-header .filename { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+        .code-block-header .filename .folder { color: var(--text-muted); }
         .tag-domain { background: var(--agg-glow); color: var(--agg-color); }
         .tag-infra { background: var(--repo-glow); color: var(--repo-color); }
+        .at { color: #c792ea; }
 
-        .code-block pre {
-            padding: 20px;
-            overflow-x: auto;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            line-height: 1.8;
-            color: var(--text-primary);
-        }
-
-        .code-block pre code { font-family: inherit; }
-
-        /* Syntax highlighting */
-        .kw { color: #c792ea; }
-        .fn { color: #82aaff; }
-        .cl { color: #ffcb6b; }
-        .st { color: #c3e88d; }
-        .cm { color: #546e7a; font-style: italic; }
-        .vr { color: #f78c6c; }
-        .ty { color: #89ddff; }
-        .op { color: #89ddff; }
-        .nb { color: #f07178; }
-        .at { color: #c792ea; } /* attributes/annotations */
-
-        /* ============================================
-           INSIGHT BOX
-           ============================================ */
-        .insight-box {
-            display: flex;
-            gap: 16px;
-            padding: 20px 24px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            margin-top: 20px;
-            align-items: flex-start;
-        }
-
-        .insight-box .icon {
-            font-size: 1.4rem;
-            flex-shrink: 0;
-            line-height: 1.5;
-        }
-
-        .insight-box p {
-            color: var(--text-secondary);
-            font-size: 0.92rem;
-        }
-
-        .insight-box p strong { color: var(--text-primary); }
-
+        .insight-box { margin-top: 20px; }
+        .insight-box .icon { font-size: 1.4rem; line-height: 1.5; }
+        .insight-box p { font-size: 0.92rem; }
         .insight-box code {
             color: var(--accent);
             background: var(--bg-code);
@@ -612,27 +434,9 @@
             font-size: 0.82rem;
         }
 
-        /* ============================================
-           DIVIDER
-           ============================================ */
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent);
-            margin: 16px 0;
-        }
+        .divider { margin: 16px 0; }
 
-        /* ============================================
-           FOOTER
-           ============================================ */
-        footer {
-            text-align: center;
-            padding: 70px 24px 40px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            position: relative;
-            z-index: 1;
-        }
-
+        footer { padding: 70px 24px 40px; }
         footer .ddd-logo {
             font-family: var(--font-display);
             font-weight: 900;
@@ -652,69 +456,11 @@
 
         footer a:hover { text-decoration: underline; }
 
-        /* ============================================
-           BACK TO TOP
-           ============================================ */
-        .back-to-top {
-            position: fixed;
-            bottom: 28px;
-            right: 28px;
-            z-index: 100;
-            width: 48px; height: 48px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(16px);
-            text-decoration: none;
-            font-size: 1.2rem;
-        }
-
-        .back-to-top.show { opacity: 1; transform: translateY(0); }
-
-        .back-to-top:hover {
-            border-color: var(--accent);
-            color: var(--text-primary);
-            box-shadow: 0 4px 20px rgba(0,0,0,.4);
-        }
+        .back-to-top:hover { border-color: var(--accent); }
 
         /* ============================================
-           SCROLLBAR
+           DDD: section animations (solid.css has fadeUp, slideIn*)
            ============================================ */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-        .code-block pre::-webkit-scrollbar { height: 6px; }
-        .code-block pre::-webkit-scrollbar-track { background: transparent; }
-        .code-block pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-        /* ============================================
-           ANIMATIONS
-           ============================================ */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
         .concept.visible .code-grid > :first-child,
         .concept.visible .code-single > :first-child {
             animation: slideInLeft 0.6s ease-out 0.2s both;
@@ -740,42 +486,7 @@
             animation: fadeUp 0.6s ease-out 0.5s both;
         }
 
-        /* ============================================
-           TOP NAV (Accueil + SOLID)
-           ============================================ */
-        .top-nav {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-        }
-
-        .sibling-link {
-            position: static;
-            padding: 10px 18px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 600;
-            backdrop-filter: blur(16px);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .sibling-link:hover {
-            border-color: var(--border-hover);
-            color: var(--text-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,.3);
-        }
-
+        .sibling-link:hover { border-color: var(--border-hover); }
         .sibling-link .arrow { font-size: 0.9rem; }
     </style>
 </head>

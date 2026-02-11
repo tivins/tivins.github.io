@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ &middot; Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../solid.css">
+    <style>
+        /* Index: grandes cartes de navigation */
+        .index-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        @media (max-width: 600px) {
+            .index-cards { grid-template-columns: 1fr; }
+        }
+        .index-card {
+            display: block;
+            padding: 32px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        .index-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,.35);
+        }
+        .index-card-title {
+            font-family: 'Space Grotesk', var(--font-sans);
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .index-card-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            line-height: 1.5;
+        }
+        .index-card-raii { border-color: #38bdf8; }
+        .index-card-raii:hover { border-color: #38bdf8; box-shadow: 0 12px 40px #38bdf835; }
+        .index-card-raii .index-card-title { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="bg-grid"></div>
+<div class="bg-gradient-orbs"></div>
+
+<!-- ============================
+     HERO
+     ============================ -->
+<section class="hero" id="top">
+    <div class="hero-content">
+        <div class="hero-badge"><span class="dot"></span> Documentation &middot; C++</div>
+        <h1 style="font-family: 'Space Grotesk', var(--font-sans); font-size: clamp(3.5rem, 8vw, 7rem); font-weight: 900; line-height: 1; letter-spacing: -0.04em; margin-bottom: 8px; color: #38bdf8;">
+            C++
+        </h1>
+        <p class="hero-subtitle">
+            Concepts fondamentaux du <strong>C++ moderne</strong>
+            pour &eacute;crire du code <strong>s&ucirc;r, performant et maintenable</strong>.
+        </p>
+        <nav class="index-cards">
+            <a href="raii.html" class="index-card index-card-raii">
+                <span class="index-card-title">RAII</span>
+                <p class="index-card-desc">Resource Acquisition Is Initialization &mdash; gestion automatique des ressources</p>
+            </a>
+        </nav>
+    </div>
+    <div class="scroll-indicator">
+        <div class="mouse"></div>
+        scroll
+    </div>
+</section>
+
+<script>
+    // Smooth scroll for anchor links (if any)
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
+            const href = link.getAttribute('href');
+            if (href === '#') return;
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+</script>
+
+</body>
+</html>
